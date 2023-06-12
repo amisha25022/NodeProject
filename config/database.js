@@ -5,7 +5,6 @@ import mongoose from "mongoose";
 
 
 const MONGO_URI = process.env.MONGO_URI;
-console.log("ps21",process.env.MONGO_URI); 
 
 export const connect = () => {
     // Connecting to the database

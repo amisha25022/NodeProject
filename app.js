@@ -9,12 +9,26 @@ import express, { json } from "express";
 import User from "./model/user.js";
 import {verifyToken} from "./middleware/auth.js";
 // import verifyToken from "./middleware/auth.js";
+import mongoose from "mongoose";
+
 
 
 const app = express();
 app.use(json());
 
+const productSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+  },
+  price: {
+    type: Number,
+    required: true,
+  }
+  
+});
 
+const Product = mongoose.model('Product', productSchema);
 // Register
 app.post("/register", async (req, res) => {
     try {
@@ -101,6 +115,47 @@ app.post("/welcome", verifyToken, (req, res) => {
     res.status(200).send("Welcome 🙌 ");
   });
 
-// Logic goes here
+
+// Product Listing and Search
+app.post("/sell-product", verifyToken, (req, res) => {
+ 
+  const { title, price } = req.body;
+  const product = new Product({ title, price});
+
+  product.save()
+    .then(() => {
+      res.status(201).json({ message: 'Product listed successfully' });
+    })
+    .catch((error) => {
+        console.log(error);
+      res.status(400).json({ error: 'Failed to list product' });
+    });
+});
+
+app.get("/buy-product",verifyToken, (req, res) => {
+  const { title } = req.query;
+  const regex = new RegExp(title, 'i');
+  console.log(req.query);
+  
+  Product.find({ title: regex })
+    .then((products) => {
+      // Fetch products matching the title
+      // Send the products in the response
+      res.json(products);
+
+      // Delete the matching products from the database
+      Product.deleteOne({ title: regex })
+        .then(() => {
+          console.log("Products deleted successfully");
+        })
+        .catch((error) => {
+          console.log("Failed to delete products:", error);
+        });
+    })
+    .catch((error) => {
+      res.status(400).json({ error: 'Failed to fetch products' });
+    });
+});
+
 
 export default app;
